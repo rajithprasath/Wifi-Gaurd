@@ -494,20 +494,31 @@ public class WifiConnector {
     }
 
     private void removeWifiNetwork(String SSID, String BSSID) {
+        System.out.println("fggggggg 1111111 ");
         List<WifiConfiguration> list1 = wifiManager.getConfiguredNetworks();
+        System.out.println("fggggggg 2222222 " + list1);
         if (list1 != null && list1.size() > 0) {
+            System.out.println("fggggggg 33333 " + list1.size());
             for (WifiConfiguration i : list1) {
                 try {
+                    System.out.println("fggggggg 55555 " + SSID);
+                    System.out.println("fggggggg 6666666 " + BSSID);
+                    System.out.println("fggggggg 77777 " + getCurrentWifiSSID());
+                    System.out.println("fggggggg 88888888 " + getCurrentWifiBSSID());
                     if (SSID.equals(getCurrentWifiSSID()) || BSSID.equals(getCurrentWifiBSSID())) {
+                        System.out.println("fggggggg 9999999 " );
                         if (wifiManager.removeNetwork(i.networkId)) {
+                            System.out.println("fggggggg 10000 " );
                             wifiLog("Network deleted: " + i.networkId + " " + i.SSID);
                             removeWifiListener.onWifiNetworkRemoved();
                         } else {
+                            System.out.println("fggggggg 12121 " );
                             removeWifiListener.onWifiNetworkRemoveError();
                         }
                         wifiManager.saveConfiguration();
                     } else {
                         wifiLog("Unable to remove Wifi Network " + i.SSID);
+                        System.out.println("fggggggg 13131 " );
                         removeWifiListener.onWifiNetworkRemoveError();
                     }
                 } catch (NullPointerException e) {
@@ -515,6 +526,7 @@ public class WifiConnector {
                 }
             }
         } else {
+            System.out.println("fggggggg 4444 " );
             wifiLog("Empty Wifi List");
             removeWifiListener.onWifiNetworkRemoveError();
         }

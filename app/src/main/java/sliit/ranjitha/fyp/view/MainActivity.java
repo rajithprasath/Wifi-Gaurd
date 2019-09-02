@@ -17,6 +17,7 @@ import android.media.RingtoneManager;
 import android.net.Uri;
 import android.net.wifi.ScanResult;
 import android.net.wifi.SupplicantState;
+import android.net.wifi.WifiConfiguration;
 import android.net.wifi.WifiManager;
 import android.os.Build;
 import android.provider.Settings;
@@ -177,7 +178,7 @@ public class MainActivity extends Activity implements WifiConnectorModel, Connec
 
             @Override
             public void onWifiItemLongClick(ScanResult scanResult) {
-                disconnectFromAccessPoint(scanResult);
+
             }
         });
         rv.setAdapter(adapter);
@@ -264,8 +265,8 @@ public class MainActivity extends Activity implements WifiConnectorModel, Connec
     }
 
     @Override
-    public void disconnectFromAccessPoint(ScanResult scanResult) {
-        this.wifiConnector.removeWifiNetwork(scanResult, new RemoveWifiListener() {
+    public void disconnectFromAccessPoint(String SSID,String BSSID) {
+        this.wifiConnector.removeWifiNetwork(SSID,BSSID, new RemoveWifiListener() {
             @Override
             public void onWifiNetworkRemoved() {
                 Toast.makeText(MainActivity.this, "You have removed this wifi!", Toast.LENGTH_SHORT).show();
@@ -273,7 +274,7 @@ public class MainActivity extends Activity implements WifiConnectorModel, Connec
 
             @Override
             public void onWifiNetworkRemoveError() {
-                Toast.makeText(MainActivity.this, "Error on removing this network!", Toast.LENGTH_SHORT).show();
+                Toast.makeText(MainActivity.this, "Error on removing this network!. Please try to disconnect with the system ", Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -379,18 +380,21 @@ public class MainActivity extends Activity implements WifiConnectorModel, Connec
     public void onNetworkConnected(String SSID, String BSSID) {
         System.out.println("checking network connection 1111 " + SSID);
         if (db.getWifiNetwork(BSSID) == null) {
-            long time = System.currentTimeMillis();
-            WifiNetwork wifiNetwork = new WifiNetwork();
-            wifiNetwork.setId(String.valueOf(time));
-            wifiNetwork.setSsid(SSID);
-            wifiNetwork.setBssid(BSSID);
-            wifiNetwork.setIsTrusted(TRUSTED);
-            wifiNetwork.setIsBlocked(0);
-            long insertValue = db.addWifiNetwork(wifiNetwork);
-            if (insertValue != -1) {
+
+            // connected network no
+            createConnectedAlertDialog(SSID,BSSID,true);
+        }else {
+            if(db.getWifiNetwork(BSSID).getIsTrusted()==TRUSTED){
+
+            }else{
+
+                //connected network not in the trusted list
+                createConnectedAlertDialog(SSID,BSSID,false);
 
             }
         }
+
+
 
 
     }
@@ -404,6 +408,80 @@ public class MainActivity extends Activity implements WifiConnectorModel, Connec
     public void onNetworkStateChange(SupplicantState supplicantState) {
 
     }
+
+    private void createConnectedAlertDialog(String SSID,String BSSID, boolean isBlocked) {
+        LayoutInflater myLayout = LayoutInflater.from(MainActivity.this);
+        final View dialogView = myLayout.inflate(R.layout.connection_alert_dialog, null);
+        android.app.AlertDialog.Builder alertDialogBuilder = new android.app.AlertDialog.Builder(
+                MainActivity.this);
+        alertDialogBuilder.setView(dialogView);
+        final android.app.AlertDialog alertDialog = alertDialogBuilder.create();
+        alertDialog.setCanceledOnTouchOutside(false);
+        alertDialog.show();
+
+
+        TextView messageTextView = (TextView) alertDialog.findViewById(R.id.greeting_text_view);
+        if (isBlocked) {
+            messageTextView.setText("This connected network "+ SSID+" with mac address( "+BSSID+" ) not in the trusted list. Do you wish to contitue?");
+        }else{
+            messageTextView.setText("This connected network \"+ SSID+\" with mac address( "+BSSID+" )belongs to the blocked list. Do you want to dissconnect?");
+        }
+
+        TextView okTextView = (TextView) alertDialog.findViewById(R.id.yes_button_text_view);
+        TextView cancelTextView = (TextView) alertDialog.findViewById(R.id.cancel_button_text_view);
+
+
+        okTextView.setOnClickListener(new View.OnClickListener() {
+
+            public void onClick(View v) {
+                alertDialog.dismiss();
+                if(isBlocked){
+                    long time = System.currentTimeMillis();
+                    WifiNetwork wifiNetwork = new WifiNetwork();
+                    wifiNetwork.setId(String.valueOf(time));
+                    wifiNetwork.setSsid(SSID);
+                    wifiNetwork.setBssid(BSSID);
+                    wifiNetwork.setIsTrusted(TRUSTED);
+                    wifiNetwork.setIsBlocked(0);
+                    long insertValue = db.addWifiNetwork(wifiNetwork);
+                    if (insertValue != -1) {
+
+                    }
+                }else{
+
+                    disconnectFromAccessPoint(SSID,BSSID);
+
+
+                }
+
+
+            }
+        });
+        cancelTextView.setOnClickListener(new View.OnClickListener() {
+
+            public void onClick(View v) {
+                alertDialog.dismiss();
+                if(isBlocked){
+                    long time = System.currentTimeMillis();
+                    WifiNetwork wifiNetwork = new WifiNetwork();
+                    wifiNetwork.setId(String.valueOf(time));
+                    wifiNetwork.setSsid(SSID);
+                    wifiNetwork.setBssid(BSSID);
+                    wifiNetwork.setIsTrusted(BLOCKED);
+                    wifiNetwork.setIsBlocked(0);
+                    long insertValue = db.addWifiNetwork(wifiNetwork);
+                    if (insertValue != -1) {
+                        Toast.makeText(MainActivity.this, "This network added to the blocked list. Please try to disconnect with the system",
+                                Toast.LENGTH_SHORT).show();
+                    }
+                }
+
+
+            }
+        });
+    }
+
+
 
     private void createAlertDialog(final ScanResult scanResult, boolean isBlocked) {
         LayoutInflater myLayout = LayoutInflater.from(MainActivity.this);

@@ -16,7 +16,7 @@ public interface WifiConnectorModel {
 
     void connectToWifiAccessPoint(ScanResult scanResult, String password);
 
-    void disconnectFromAccessPoint(ScanResult scanResult);
+    void disconnectFromAccessPoint(String SSID,String BSSID);
 
     void destroyWifiConnectorListeners();
 
